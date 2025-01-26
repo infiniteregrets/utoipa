@@ -10,7 +10,7 @@ use syn::token::Comma;
 use syn::{parenthesized, parse::Parse, Token};
 use syn::{Expr, ExprLit, Lit, LitStr};
 
-use crate::component::{ComponentSchema, GenericType, TypeTree};
+use crate::component::{features::attributes::Extensions, ComponentSchema, GenericType, TypeTree};
 use crate::server::Server;
 use crate::{
     as_tokens_or_diagnostics, parse_utils, Deprecated, Diagnostics, OptionExt, ToTokensDiagnostics,
@@ -55,6 +55,7 @@ pub struct PathAttr<'p> {
     description: Option<parse_utils::LitStrOrExpr>,
     summary: Option<parse_utils::LitStrOrExpr>,
     servers: Vec<Server>,
+    extensions: Option<Extensions>,
 }
 
 impl<'p> PathAttr<'p> {
@@ -191,6 +192,9 @@ impl Parse for PathAttr<'_> {
                         Punctuated::<Server, Token![,]>::parse_terminated(&servers)?
                             .into_iter()
                             .collect();
+                }
+                "extensions" => {
+                    path_attr.extensions = Some(input.parse::<Extensions>()?);
                 }
                 _ => {
                     if let Some(path_operation) =
@@ -478,6 +482,7 @@ impl<'p> ToTokensDiagnostics for Path<'p> {
             responses: self.path_attr.responses.as_ref(),
             security: self.path_attr.security.as_ref(),
             servers: self.path_attr.servers.as_ref(),
+            extensions: self.path_attr.extensions.as_ref(),
         };
         let operation = as_tokens_or_diagnostics!(&operation);
 
@@ -637,6 +642,7 @@ struct Operation<'a> {
     responses: &'a Vec<Response<'a>>,
     security: Option<&'a Array<'a, SecurityRequirementsAttr>>,
     servers: &'a Vec<Server>,
+    extensions: Option<&'a Extensions>,
 }
 
 impl ToTokensDiagnostics for Operation<'_> {
@@ -687,6 +693,10 @@ impl ToTokensDiagnostics for Operation<'_> {
 
         for parameter in self.parameters {
             parameter.to_tokens(tokens)?;
+        }
+
+        if let Some(extensions) = self.extensions {
+            tokens.extend(quote! { .extensions(Some(#extensions)) })
         }
 
         Ok(())
