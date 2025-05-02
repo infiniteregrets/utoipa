@@ -131,8 +131,13 @@ impl SchemaType<'_> {
             if !primitive {
                 primitive = matches!(
                     name,
-                    "Date" | "PrimitiveDateTime" | "OffsetDateTime" | "Duration"
+                    "Time" | "Date" | "PrimitiveDateTime" | "OffsetDateTime" | "Duration"
                 );
+            }
+
+            #[cfg(feature = "jiff_0_2")]
+            if !primitive {
+                primitive = matches!(name, "Zoned" | "Date");
             }
 
             primitive
@@ -268,8 +273,8 @@ impl ToTokensDiagnostics for SchemaType<'_> {
                 schema_type_tokens(tokens, SchemaTypeInner::String, self.nullable)
             }
 
-            #[cfg(any(feature = "chrono", feature = "time"))]
-            "Date" | "Duration" => {
+            #[cfg(any(feature = "chrono", feature = "time", feature = "jiff_0_2"))]
+            "Time" | "Date" | "Duration" => {
                 schema_type_tokens(tokens, SchemaTypeInner::String, self.nullable)
             }
 
@@ -295,6 +300,8 @@ impl ToTokensDiagnostics for SchemaType<'_> {
             "PrimitiveDateTime" | "OffsetDateTime" => {
                 schema_type_tokens(tokens, SchemaTypeInner::String, self.nullable)
             }
+            #[cfg(feature = "jiff_0_2")]
+            "Zoned" => schema_type_tokens(tokens, SchemaTypeInner::String, self.nullable),
             _ => schema_type_tokens(tokens, SchemaTypeInner::Object, self.nullable),
         };
 
@@ -324,6 +331,7 @@ pub enum KnownFormat {
     Double,
     Byte,
     Binary,
+    Time,
     Date,
     DateTime,
     Duration,
@@ -393,13 +401,16 @@ impl KnownFormat {
             "f32" => Self::Float,
             "f64" => Self::Double,
 
+            #[cfg(any(feature = "chrono", feature = "time", feature = "jiff_0_2"))]
+            "Time" => Self::Time,
+
             #[cfg(feature = "chrono")]
             "NaiveDate" => Self::Date,
 
             #[cfg(feature = "chrono")]
             "DateTime" | "NaiveDateTime" => Self::DateTime,
 
-            #[cfg(any(feature = "chrono", feature = "time"))]
+            #[cfg(any(feature = "chrono", feature = "time", feature = "jiff_0_2"))]
             "Date" => Self::Date,
 
             #[cfg(feature = "decimal_float")]
@@ -416,6 +427,9 @@ impl KnownFormat {
 
             #[cfg(feature = "time")]
             "PrimitiveDateTime" | "OffsetDateTime" => Self::DateTime,
+
+            #[cfg(feature = "jiff_0_2")]
+            "Zoned" => Self::DateTime,
             _ => Self::Unknown,
         };
 
@@ -434,6 +448,7 @@ impl KnownFormat {
             "Double",
             "Byte",
             "Binary",
+            "Time",
             "Date",
             "DateTime",
             "Duration",
@@ -513,6 +528,7 @@ impl Parse for KnownFormat {
                 "Double" => Ok(Self::Double),
                 "Byte" => Ok(Self::Byte),
                 "Binary" => Ok(Self::Binary),
+                "Time" => Ok(Self::Time),
                 "Date" => Ok(Self::Date),
                 "DateTime" => Ok(Self::DateTime),
                 "Duration" => Ok(Self::Duration),
@@ -589,6 +605,9 @@ impl ToTokens for KnownFormat {
             ))),
             Self::Binary => tokens.extend(quote!(utoipa::openapi::schema::SchemaFormat::KnownFormat(
                 utoipa::openapi::schema::KnownFormat::Binary
+            ))),
+            Self::Time => tokens.extend(quote!(utoipa::openapi::schema::SchemaFormat::KnownFormat(
+                utoipa::openapi::schema::KnownFormat::Time
             ))),
             Self::Date => tokens.extend(quote!(utoipa::openapi::schema::SchemaFormat::KnownFormat(
                 utoipa::openapi::schema::KnownFormat::Date
@@ -694,8 +713,13 @@ impl PrimitiveType {
                 syn::parse_quote!(String)
             }
 
+            #[cfg(any(feature = "chrono", feature = "time", feature = "jiff_0_2"))]
+            "Time" | "Date" => {
+                syn::parse_quote!(String)
+            }
+
             #[cfg(any(feature = "chrono", feature = "time"))]
-            "Date" | "Duration" => {
+            "Duration" => {
                 syn::parse_quote!(String)
             }
 
@@ -731,6 +755,11 @@ impl PrimitiveType {
 
             #[cfg(feature = "time")]
             "PrimitiveDateTime" | "OffsetDateTime" => {
+                syn::parse_quote!(String)
+            }
+
+            #[cfg(feature = "jiff_0_2")]
+            "Zoned" => {
                 syn::parse_quote!(String)
             }
             _ => {

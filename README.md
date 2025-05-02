@@ -63,7 +63,7 @@ and the `ipa` is _api_ reversed. Aaand... `ipa` is also an awesome type of beer 
 ## Crate Features
 
 - **`macros`** Enable `utoipa-gen` macros. **This is enabled by default.**
-- **`yaml`**: Enables **serde_yml** serialization of OpenAPI objects.
+- **`yaml`**: Enables **serde_norway** serialization of OpenAPI objects.
 - **`actix_extras`**: Enhances [actix-web](https://github.com/actix/actix-web/) integration with being able to
   parse `path`, `path` and `query` parameters from actix web path attribute macros. See
   [docs](https://docs.rs/utoipa/latest/utoipa/attr.path.html#actix_extras-feature-support-for-actix-web) or [examples](./examples) for more details.
@@ -83,6 +83,10 @@ and the `ipa` is _api_ reversed. Aaand... `ipa` is also an awesome type of beer 
 - **`time`**: Add support for [time](https://crates.io/crates/time) `OffsetDateTime`, `PrimitiveDateTime`, `Date`, and `Duration` types.
   By default these types are parsed as `string`. `OffsetDateTime` and `PrimitiveDateTime` will use `date-time` format. `Date` will use
   `date` format and `Duration` will not have any format. To override default `string` representation users have to use `value_type` attribute
+  to override the type. See [docs](https://docs.rs/utoipa/latest/utoipa/derive.ToSchema.html) for more details.
+- **`jiff_0_2`** Add support for [jiff 0.2](https://crates.io/crates/jiff) `Zoned`, and `civil::Date` types.
+  By default these types are parsed as `string`. `Zoned` will use `date-time` format. `civil::Date` will use
+  `date` format. To override default `string` representation users have to use `value_type` attribute
   to override the type. See [docs](https://docs.rs/utoipa/latest/utoipa/derive.ToSchema.html) for more details.
 - **`decimal`**: Add support for [rust_decimal](https://crates.io/crates/rust_decimal) `Decimal` type. **By default**
   it is interpreted as `String`. If you wish to change the format you need to override the type.
