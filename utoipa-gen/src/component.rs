@@ -1223,17 +1223,10 @@ impl ComponentSchema {
                         ..SchemaReference::default()
                     };
 
-                    if let Some(children) = &type_tree.children {
-                        let children_name = Self::compose_name(
-                            Self::filter_const_generics(children, container.generics),
-                            container.generics,
-                        )?;
-                        name_tokens.extend(quote! { std::borrow::Cow::Owned(format!("{}_{}", < #rewritten_path as utoipa::ToSchema >::name(), #children_name)) });
-                    } else {
-                        name_tokens.extend(
-                            quote! { format!("{}", < #rewritten_path as utoipa::ToSchema >::name()) },
-                        );
-                    }
+                    // fixes.. 
+                    name_tokens.extend(
+                        quote! { format!("{}", < #rewritten_path as utoipa::ToSchema >::name()) },
+                    );
 
                     object_schema_reference.name = quote! { String::from(#name_tokens) };
 
@@ -1435,35 +1428,6 @@ impl ComponentSchema {
             }
         }
         Ok(())
-    }
-
-    fn compose_name<'tr, I>(
-        children: I,
-        generics: &'tr Generics,
-    ) -> Result<TokenStream, Diagnostics>
-    where
-        I: IntoIterator<Item = &'tr TypeTree<'tr>>,
-    {
-        let children = children
-            .into_iter()
-            .map(|type_tree| {
-                let name = type_tree
-                    .path
-                    .as_deref()
-                    .expect("Generic ValueType::Object must have path");
-                let rewritten_name = name.rewrite_path()?;
-
-                if let Some(children) = &type_tree.children {
-                    let children_name = Self::compose_name(Self::filter_const_generics(children, generics), generics)?;
-
-                    Ok(quote! { std::borrow::Cow::Owned(format!("{}_{}", <#rewritten_name as utoipa::ToSchema>::name(), #children_name)) })
-                } else {
-                    Ok(quote! { <#rewritten_name as utoipa::ToSchema>::name() })
-                }
-            })
-            .collect::<Result<Array<_>, Diagnostics>>()?;
-
-        Ok(quote! { std::borrow::Cow::<String>::Owned(#children.to_vec().join("_")) })
     }
 
     fn compose_generics<'v, I: IntoIterator<Item = &'v TypeTree<'v>>>(
