@@ -1,5 +1,11 @@
 # Changelog - utoipa-gen
 
+## Unreleased
+
+### Added
+
+* Add `content_type` attribute to `IntoParams` `#[param(...)]` to render the parameter schema under `content`
+
 ## 5.4.0 - Jun 16 2025
 
 ### Added

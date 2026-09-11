@@ -7,6 +7,7 @@ use serde_json::Value;
 
 use super::{
     builder,
+    content::Content,
     extensions::Extensions,
     request_body::RequestBody,
     response::{Response, Responses},
@@ -705,6 +706,13 @@ builder! {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub schema: Option<RefOr<Schema>>,
 
+        /// Map of [`Content`] objects identified by media type e.g. `application/json`, describing
+        /// how the parameter is represented. Alternative to [`Parameter::schema`] for parameters
+        /// with complex serialization, e.g. a JSON-encoded header value. The map must contain
+        /// exactly one entry, and [`Parameter::schema`] must not be set when it is used.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub content: Option<std::collections::BTreeMap<String, Content>>,
+
         /// Describes how [`Parameter`] is being serialized depending on [`Parameter::schema`] (type of a content).
         /// Default value is based on [`ParameterIn`].
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -789,6 +797,18 @@ impl ParameterBuilder {
     /// Add or change [`Parameter`]s schema.
     pub fn schema<I: Into<RefOr<Schema>>>(mut self, component: Option<I>) -> Self {
         set_value!(self schema component.map(|component| component.into()))
+    }
+
+    /// Add [`Content`] by media type e.g. `application/json` to the [`Parameter`].
+    ///
+    /// Used instead of [`ParameterBuilder::schema`] for parameters with complex serialization.
+    /// OpenAPI allows only a single media type per parameter.
+    pub fn content<S: Into<String>>(mut self, content_type: S, content: Content) -> Self {
+        self.content
+            .get_or_insert_with(Default::default)
+            .insert(content_type.into(), content);
+
+        self
     }
 
     /// Add or change serialization style of [`Parameter`].
